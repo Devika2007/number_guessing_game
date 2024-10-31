@@ -55,3 +55,4 @@ fi
 # Logic for guessing and feedback
 echo "Guess the secret number between 1 and 1000:"
 # Check username in the database and update stats
+# Add error handling and final adjustments
