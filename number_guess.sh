@@ -5,7 +5,6 @@ PSQL="psql --username=freecodecamp --dbname=number_guess -t --no-align -c"
 
 # Function to handle user input and guessing
 function start_game() {
-  # Generate a random secret number between 1 and 1000
   SECRET_NUMBER=$((RANDOM % 1000 + 1))
   NUMBER_OF_GUESSES=0
 
@@ -27,9 +26,7 @@ function start_game() {
     elif [[ $GUESS -gt $SECRET_NUMBER ]]; then
       echo "It's lower than that, guess again:"
     else
-      # User guessed correctly
       echo "You guessed it in $NUMBER_OF_GUESSES tries. The secret number was $SECRET_NUMBER. Nice job!"
-      # Update user statistics in the database
       update_user_stats "$USERNAME" "$NUMBER_OF_GUESSES"
       break
     fi
@@ -41,19 +38,17 @@ function update_user_stats() {
   local USERNAME=$1
   local NUMBER_OF_GUESSES=$2
   
-  # Get current stats for the user
   USER_DATA=$($PSQL "SELECT games_played, best_game FROM users WHERE username = '$USERNAME'")
   IFS="|" read GAMES_PLAYED BEST_GAME <<< "$USER_DATA"
 
-  # Increment the games played
+  # Increment games played
   GAMES_PLAYED=$((GAMES_PLAYED + 1))
   
-  # Determine if the current game is the best
   if [[ -z $BEST_GAME || $NUMBER_OF_GUESSES -lt $BEST_GAME ]]; then
     BEST_GAME=$NUMBER_OF_GUESSES
   fi
   
-  # Update the database with the new statistics
+  # Update user statistics in the database
   $PSQL "UPDATE users SET games_played = $GAMES_PLAYED, best_game = $BEST_GAME WHERE username = '$USERNAME';"
 }
 
@@ -67,17 +62,11 @@ USER_DATA=$($PSQL "SELECT games_played, best_game FROM users WHERE username = '$
 if [[ -z $USER_DATA ]]; then
   # New user
   echo "Welcome, $USERNAME! It looks like this is your first time here."
-  
-  # Insert new user into the database
-  INSERT_RESULT=$($PSQL "INSERT INTO users (username) VALUES ('$USERNAME')")
-  
-  # Start the game
+  INSERT_RESULT=$($PSQL "INSERT INTO users (username, games_played, best_game) VALUES ('$USERNAME', 0, NULL)")
   start_game
 else
   # Existing user
   IFS="|" read GAMES_PLAYED BEST_GAME <<< "$USER_DATA"
   echo "Welcome back, $USERNAME! You have played $GAMES_PLAYED games, and your best game took $BEST_GAME guesses."
-  
-  # Start the game
   start_game
 fi
