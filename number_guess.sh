@@ -56,3 +56,4 @@ fi
 echo "Guess the secret number between 1 and 1000:"
 # Check username in the database and update stats
 # Add error handling and final adjustments
+echo "Good try! Let's see if you can guess it faster next time!"
