@@ -27,10 +27,34 @@ function start_game() {
     elif [[ $GUESS -gt $SECRET_NUMBER ]]; then
       echo "It's lower than that, guess again:"
     else
+      # User guessed correctly
       echo "You guessed it in $NUMBER_OF_GUESSES tries. The secret number was $SECRET_NUMBER. Nice job!"
+      # Update user statistics in the database
+      update_user_stats "$USERNAME" "$NUMBER_OF_GUESSES"
       break
     fi
   done
+}
+
+# Function to update user statistics
+function update_user_stats() {
+  local USERNAME=$1
+  local NUMBER_OF_GUESSES=$2
+  
+  # Get current stats for the user
+  USER_DATA=$($PSQL "SELECT games_played, best_game FROM users WHERE username = '$USERNAME'")
+  IFS="|" read GAMES_PLAYED BEST_GAME <<< "$USER_DATA"
+
+  # Increment the games played
+  GAMES_PLAYED=$((GAMES_PLAYED + 1))
+  
+  # Determine if the current game is the best
+  if [[ -z $BEST_GAME || $NUMBER_OF_GUESSES -lt $BEST_GAME ]]; then
+    BEST_GAME=$NUMBER_OF_GUESSES
+  fi
+  
+  # Update the database with the new statistics
+  $PSQL "UPDATE users SET games_played = $GAMES_PLAYED, best_game = $BEST_GAME WHERE username = '$USERNAME';"
 }
 
 # Prompt for username
@@ -43,17 +67,17 @@ USER_DATA=$($PSQL "SELECT games_played, best_game FROM users WHERE username = '$
 if [[ -z $USER_DATA ]]; then
   # New user
   echo "Welcome, $USERNAME! It looks like this is your first time here."
-  start_game
+  
   # Insert new user into the database
   INSERT_RESULT=$($PSQL "INSERT INTO users (username) VALUES ('$USERNAME')")
+  
+  # Start the game
+  start_game
 else
   # Existing user
-  IFS=" | " read GAMES_PLAYED BEST_GAME <<< "$USER_DATA"
+  IFS="|" read GAMES_PLAYED BEST_GAME <<< "$USER_DATA"
   echo "Welcome back, $USERNAME! You have played $GAMES_PLAYED games, and your best game took $BEST_GAME guesses."
+  
+  # Start the game
   start_game
 fi
-# Logic for guessing and feedback
-echo "Guess the secret number between 1 and 1000:"
-# Check username in the database and update stats
-# Add error handling and final adjustments
-echo "Good try! Let's see if you can guess it faster next time!"
