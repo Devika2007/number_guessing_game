@@ -52,3 +52,5 @@ else
   echo "Welcome back, $USERNAME! You have played $GAMES_PLAYED games, and your best game took $BEST_GAME guesses."
   start_game
 fi
+# Logic for guessing and feedback
+echo "Guess the secret number between 1 and 1000:"
